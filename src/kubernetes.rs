@@ -19,7 +19,10 @@ impl KubeClient {
         Ok(Self { client: client })
     }
 
-    pub async fn watch_events(&self) -> anyhow::Result<()> {
+    pub async fn watch_events<F>(&self, callback: F) -> anyhow::Result<()>
+    where
+        F: FnMut(Event),
+    {
         let api = Api::<Event>::all(self.client.clone());
 
         let ctx = Context::new(self.client.clone());
@@ -29,6 +32,7 @@ impl KubeClient {
             _ctx: Context<Client>,
         ) -> Result<ReconcilerAction, Error> {
             info!("Event : {:?}", event);
+            (callback)(event);
             Ok(ReconcilerAction {
                 requeue_after: Some(Duration::from_secs(300)),
             })
