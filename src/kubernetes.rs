@@ -21,22 +21,14 @@ impl KubeClient {
 
     pub async fn watch_events<F>(&self, callback: F) -> anyhow::Result<()>
     where
-        F: FnMut(Event),
+        F: 'static + Fn(Event),
     {
         let api = Api::<Event>::all(self.client.clone());
 
-        let ctx = Context::new(self.client.clone());
-
-        async fn reconciler(
-            event: Event,
-            _ctx: Context<Client>,
-        ) -> Result<ReconcilerAction, Error> {
-            info!("Event : {:?}", event);
-            (callback)(event);
-            Ok(ReconcilerAction {
-                requeue_after: Some(Duration::from_secs(300)),
-            })
-        }
+        let ctx = Context::new(MainContext {
+            client: self.client.clone(),
+            f: Box::new(callback),
+        });
 
         Controller::new(api, ListParams::default())
             .run(reconciler, error_policy, ctx)
@@ -51,10 +43,20 @@ impl KubeClient {
     }
 }
 
-fn error_policy(_error: &Error, _ctx: Context<Client>) -> ReconcilerAction {
+fn error_policy(_error: &Error, _ctx: Context<MainContext>) -> ReconcilerAction {
     ReconcilerAction {
         requeue_after: Some(Duration::from_secs(1)),
     }
+}
+
+async fn reconciler(event: Event, ctx: Context<MainContext>) -> Result<ReconcilerAction, Error> {
+    info!("Event : {:?}", event);
+    let f = &ctx.get_ref().f;
+    f(event);
+
+    Ok(ReconcilerAction {
+        requeue_after: Some(Duration::from_secs(300)),
+    })
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -68,4 +70,9 @@ impl std::fmt::Display for Error {
     fn fmt(&self, _: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         todo!()
     }
+}
+
+struct MainContext {
+    client: Client,
+    f: Box<dyn Fn(Event)>,
 }
