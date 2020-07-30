@@ -1329,6 +1329,9 @@ dependencies = [
  "kube-derive 0.38.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "kube-runtime 0.38.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "reqwest 0.10.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.114 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_json 1.0.56 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio 0.2.22 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
