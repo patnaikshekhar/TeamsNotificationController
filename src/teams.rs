@@ -3,7 +3,12 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
 fn format_message(event: Event) -> TeamsMessage {
-    todo!()
+    TeamsMessage {
+        message_type: "MessageCard",
+        context: "http://schema.org/extensions",
+        theme_color: "0076D7",
+        summary: event,
+    }
 }
 
 pub fn send_message(url: &str, event: Event) {
