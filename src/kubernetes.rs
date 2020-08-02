@@ -1,3 +1,4 @@
+use crate::teams::send_message;
 use futures::StreamExt;
 use k8s_openapi::api::core::v1::Event;
 use kube::{
@@ -10,13 +11,14 @@ use tokio::time::Duration;
 
 pub struct KubeClient {
     client: Client,
+    url: String
 }
 
 impl KubeClient {
-    pub async fn new() -> anyhow::Result<Self> {
+    pub async fn new(url: String) -> anyhow::Result<Self> {
         let config = Config::infer().await?;
         let client = Client::new(config);
-        Ok(Self { client: client })
+        Ok(Self { client: client, url: url })
     }
 
     pub async fn watch_events<F>(&self, callback: F) -> anyhow::Result<()>
@@ -52,7 +54,8 @@ fn error_policy(_error: &Error, _ctx: Context<MainContext>) -> ReconcilerAction 
 async fn reconciler(event: Event, ctx: Context<MainContext>) -> Result<ReconcilerAction, Error> {
     info!("Event : {:?}", event);
     let f = &ctx.get_ref().f;
-    f(event);
+    // f(event);
+    send_message(url, event);
 
     Ok(ReconcilerAction {
         requeue_after: Some(Duration::from_secs(300)),
@@ -75,4 +78,5 @@ impl std::fmt::Display for Error {
 struct MainContext {
     client: Client,
     f: Box<dyn Fn(Event)>,
+    url: String
 }
